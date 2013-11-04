@@ -62,7 +62,9 @@ def extractRecordFeatures(x, locationDict, eventDict):
 
     # build feature vector phi
     timeRecord = convertTimeStampToDate(_tempFeatureList[0])
-    
+    # 
+    day, hour, minute = timeRecord			
+    	    
     # if earlier than 6am or later than 10pm, return empty feature  
     if timeRecord[1] < 6 or timeRecord[1] >= 22:      
         return (featureDict, 0)
@@ -92,8 +94,7 @@ def extractRecordFeatures(x, locationDict, eventDict):
         raise "Error:[extractRecordFeatures] exception on weekday extraction"
        
     if timeRecord[1] >=6 and timeRecord[1] < 8:    
-        featureDict['6-8'] = 1
-        
+        featureDict['6-8'] = 1       
     elif timeRecord[1] >=8 and timeRecord[1] < 10:    
         featureDict['8-10'] = 1
     elif timeRecord[1] >= 10 and timeRecord[1] < 12:    
@@ -138,7 +139,7 @@ def extractRecordFeatures(x, locationDict, eventDict):
     
     
     
-    def checkPrice(price):
+    def checkPrice(price, featureDict):
         currPrice = float(price) 
         #print "current price", currPrice        
         if currPrice < 0: 
@@ -185,8 +186,9 @@ def convertTimeStampToDate(ts=None):
         d = dateT.day
     
         dayInWeek = datetime.date(y, m, d).weekday()   
-        hourInDay = dateT.hour        
-        return (dayInWeek, hourInDay)        
+        hourInDay = dateT.hour
+	minInHour = dateT.minute    
+        return (dayInWeek, hourInDay, minInHour)        
     
     return (-1, -1)    
     
@@ -389,8 +391,55 @@ readEvents = ReadEvents("eventsSchedule/event_schedule2.csv")
 eventDict = readEvents.getEventDict()
 
 weights = Counter()
-weights = readFileUpdateWeight("output/930/930_2013_08_05.csv", locDict, eventDict, weights, 0.1)
+
+def readFileList(filepath):
+    files = []
+    for filename in os.listdir(filepath):
+        files.append(filename)
+
+    return files
+
+
+files = readFileList("output/930/")
+
+#print len(files)
+for i in range(3,48):
+    #print ">>", files[i]
+    _fname = "output/930/"+files[i]
+    #print _fname 
+    weights = readFileUpdateWeight(_fname, locDict, eventDict, weights, 0.1)
+
+
 print weights     
+
+def test(filepath, locDict, eventDict, weightsVector):
+    fp = open(filepath, 'r')
+    count = 0
+    sumErr = 0
+    for line in fp:
+        #print line
+        phi, y = extractRecordFeatures(line,locDict, eventDict)
+
+        if len(phi)<=0 or y < 0:
+            continue
+
+        estimate = sparseVectorDotProduct(weightsVector, phi)
+	print "==========show feature vector==========",phi 
+        print "real", y, "est:", estimate, "diff error", y-estimate
+        print "error rate", (y-estimate)/y
+        count +=1
+        sumErr += abs(y-estimate) / y
+        
+    fp.close()
+    avgErr = sumErr/count
+    print "--average error rate--", avgErr
+
+    
+
+test("output/930/930_2013_09_17.csv", locDict, eventDict, weights)
+
+
+
 #readfLearn = ReadingFileExtractFeatures("output/930/930_2013_08_05.csv", locDict, eventDict)        
 #readfLearn.runRegression()        
         
