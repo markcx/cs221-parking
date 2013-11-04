@@ -45,6 +45,7 @@ def extractRecordFeatures(x, locationDict, eventDict):
 
     numTimeFeatures = (finalHour-initialHour)*2+1    # a feature every half hour
 
+    # featureDict['time'] = hour*60+minute
     for ind in range(numTimeFeatures):
         startHour = initialHour+ind/2
         finalHour = initialHour+(ind+1)/2
