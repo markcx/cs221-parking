@@ -64,56 +64,88 @@ def extractRecordFeatures(x, locationDict, eventDict):
     timeRecord = convertTimeStampToDate(_tempFeatureList[0])
     # 
     day, hour, minute = timeRecord			
-    	    
+    
+    initialHour = 6
+    finalHour = 22
     # if earlier than 6am or later than 10pm, return empty feature  
-    if timeRecord[1] < 6 or timeRecord[1] >= 22:      
+    if hour < initialHour or hour >= finalHour:      
         return (featureDict, 0)
       
-      
-    if timeRecord[0] == 0 :
-        featureDict['Mon'] = 1        
+    dayDict = {0:'Mon', 1:'Tues', 2:'Wed', 3:'Thu', 4:'Fri', 5:'Sat', 6:'Sun'}
     
-    elif timeRecord[0] == 1 :
-        featureDict['Tue'] = 1 
+    assert day in dayDict
+
+    # update the day feature
+    featureDict[dayDict[day]] = 1  
+
+    numTimeFeatures = (finalHour-initialHour)*2+1    # a feature every half hour
+
+    for ind in range(numTimeFeatures):
+        startHour = initialHour+ind/2
+        finalHour = initialHour+(ind+1)/2
+        if startHour == finalHour:
+            startMin = 0
+            endMin = 30
+        else:
+            startMin = 30
+            endMin = 0
+
+        startHourMin = startHour*60+startMin
+        finalHourMin = finalHour*60+endMin
+
+        actualHourMin = hour*60+minute
+
+        if actualHourMin >= startHourMin and actualHourMin < finalHourMin:
+            timeFeatureKey = str(startHour)+':'+str(startMin)+'-'+str(finalHour)+':'+str(endMin)
+            featureDict[timeFeatureKey] = 1
+            break
+
         
-    elif timeRecord[0] == 2 :
-        featureDict['Wed'] = 1        
+
+    # if timeRecord[0] == 0 :
+    #     featureDict['Mon'] = 1        
     
-    elif timeRecord[0] == 3 :
-        featureDict['Thu'] = 1 
+    # elif timeRecord[0] == 1 :
+    #     featureDict['Tue'] = 1 
+        
+    # elif timeRecord[0] == 2 :
+    #     featureDict['Wed'] = 1        
     
-    elif timeRecord[0] == 4 :
-        featureDict['Fri'] = 1 
+    # elif timeRecord[0] == 3 :
+    #     featureDict['Thu'] = 1 
     
-    elif timeRecord[0] == 5 :
-        featureDict['Sat'] = 1 
+    # elif timeRecord[0] == 4 :
+    #     featureDict['Fri'] = 1 
     
-    elif timeRecord[0] == 6 :
-        featureDict['Sun'] = 1 
-    else:
-        raise "Error:[extractRecordFeatures] exception on weekday extraction"
+    # elif timeRecord[0] == 5 :
+    #     featureDict['Sat'] = 1 
+    
+    # elif timeRecord[0] == 6 :
+    #     featureDict['Sun'] = 1 
+    # else:
+    #     raise "Error:[extractRecordFeatures] exception on weekday extraction"
        
-    if timeRecord[1] >=6 and timeRecord[1] < 8:    
-        featureDict['6-8'] = 1       
-    elif timeRecord[1] >=8 and timeRecord[1] < 10:    
-        featureDict['8-10'] = 1
-    elif timeRecord[1] >= 10 and timeRecord[1] < 12:    
-        featureDict['10-12'] = 1
+    # if timeRecord[1] >=6 and timeRecord[1] < 8:    
+    #     featureDict['6-8'] = 1       
+    # elif timeRecord[1] >=8 and timeRecord[1] < 10:    
+    #     featureDict['8-10'] = 1
+    # elif timeRecord[1] >= 10 and timeRecord[1] < 12:    
+    #     featureDict['10-12'] = 1
         
-    elif timeRecord[1] >= 12 and timeRecord[1] < 14:    
-        featureDict['12-14'] = 1
+    # elif timeRecord[1] >= 12 and timeRecord[1] < 14:    
+    #     featureDict['12-14'] = 1
         
-    elif timeRecord[1] >= 14 and timeRecord[1] < 16:    
-        featureDict['14-16'] = 1
-    elif timeRecord[1] >= 16 and timeRecord[1] < 18:    
-        featureDict['16-18'] = 1
-    elif timeRecord[1] >=18 and timeRecord[1] < 20:    
-        featureDict['18-20'] = 1
-    elif timeRecord[1] >= 20 and timeRecord[1] < 22:         
-        featureDict['20-22'] = 1
-    else:
-        print "time record", timeRecord[1]
-        raise "Error: [extractRecordFeatures] exception on hour extraction"
+    # elif timeRecord[1] >= 14 and timeRecord[1] < 16:    
+    #     featureDict['14-16'] = 1
+    # elif timeRecord[1] >= 16 and timeRecord[1] < 18:    
+    #     featureDict['16-18'] = 1
+    # elif timeRecord[1] >=18 and timeRecord[1] < 20:    
+    #     featureDict['18-20'] = 1
+    # elif timeRecord[1] >= 20 and timeRecord[1] < 22:         
+    #     featureDict['20-22'] = 1
+    # else:
+    #     print "time record", timeRecord[1]
+    #     raise "Error: [extractRecordFeatures] exception on hour extraction"
     
     dist = 0
     if locationDict[_tempFeatureList[1]]: 
@@ -383,11 +415,11 @@ class ReadEvents():
             
             
         
-readLocation = ReadLocation("idLocation/helloLocation.txt")         
+readLocation = ReadLocation("../idLocation/helloLocation.txt")         
 locDict = readLocation.getLocationDict()
 #print locDict 
 
-readEvents = ReadEvents("eventsSchedule/event_schedule2.csv")
+readEvents = ReadEvents("../eventsSchedule/event_schedule2.csv")
 eventDict = readEvents.getEventDict()
 
 weights = Counter()
@@ -400,12 +432,12 @@ def readFileList(filepath):
     return files
 
 
-files = readFileList("output/930/")
+files = readFileList("../output/935/")
 
 #print len(files)
 for i in range(3,48):
     #print ">>", files[i]
-    _fname = "output/930/"+files[i]
+    _fname = "../output/935/"+files[i]
     #print _fname 
     weights = readFileUpdateWeight(_fname, locDict, eventDict, weights, 0.1)
 
@@ -436,7 +468,7 @@ def test(filepath, locDict, eventDict, weightsVector):
 
     
 
-test("output/930/930_2013_09_17.csv", locDict, eventDict, weights)
+test("../output/935/935_2013_09_17.csv", locDict, eventDict, weights)
 
 
 
