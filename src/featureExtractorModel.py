@@ -26,6 +26,7 @@ def extractRecordFeatures(x, locationDict, eventDict):
     
 
     # build feature vector phi
+    
     timeRecord = util.convertTimeStampToDate(_tempFeatureList[0])
     # 
     day, hour, minute = timeRecord			

@@ -1,4 +1,5 @@
 import math, os, datetime, time
+from glob import glob
 
 CENTROIDS = [[  37.80674047,   37.75915639,   37.77783732,   37.79128318,   37.78229867,
     37.79388065,   37.79965323,   37.78684646],
@@ -54,15 +55,21 @@ def sparseVectorDotProduct(v1, v2):
     for key in v1:
         if v2[key]:
             summation += v1[key]*v2[key]
-            
-    return summation 
+    
+    # summation cannot be negative because it is the predicted number of available spots
+    return summation if summation >= 0 else 0
 
 def readFileList(filepath):
     '''
     Returns a list of all filenames in a folder
     '''
     files = []
-    for filename in os.listdir(filepath):
+    # for filename in os.listdir(filepath):
+    #     if filename.endswith('.csv'):
+    #         files.append(filename)
+
+    # only get .csv files
+    for filename in glob(filepath+"/*.csv"):
         files.append(filename)
 
     return files

@@ -6,7 +6,7 @@ import cPickle as pickle
 import json
 
 lots = ['935', '202031', '326052']
-# lots = os.listdir('../output')      # get a list of all lots in output directory
+# lots = os.listdir('../train')      # get a list of all lots in train directory
 
 readLocation = util.ReadLocation("../idLocation/helloLocation.txt")         
 locDict = readLocation.getLocationDict()
@@ -22,7 +22,6 @@ def readFileUpdateWeight( filepath = 'NA', locDict='NA', eventDict='NA', weights
         w[i] = w[i] + alpha*(y[i]-dotProd(w,phi))*phi[i]
     '''
     _weightsVector = weightsVector.copy()
-    
     if not os.path.exists(filepath):    
         raise "File doesn't exist!!"
         return _weightsVector
@@ -50,22 +49,21 @@ def linearRegression(lot):
     '''
     weights = Counter()
 
-    files = util.readFileList("../output/"+lot+"/")
+    files = util.readFileList("../train/"+lot)
 
     # for i in range(3,48):
-    for i in range(len(files)):
-        _fname = "../output/"+lot+"/"+files[i]
-        weights = readFileUpdateWeight(_fname, locDict, eventDict, weights, 0.1)
-
-    # print 'Weights are'
-    # print weights     
+    for _fname in files:
+        # _fname = "../train/"+lot+"/"+files[i]
+        weights = readFileUpdateWeight(_fname, locDict, eventDict, weights, 0.1) 
 
     # write weights to file
     with open('../weights/'+lot+'weights.p', 'wb') as fp:
         pickle.dump(weights, fp)
+    fp.close()
 
     with open('../weights/'+lot+'weights.json', 'wb') as fp:
         json.dump(weights, fp)
+    fp.close()
 
 # run regression on all the lots
 for lot in lots:
