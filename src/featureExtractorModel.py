@@ -137,7 +137,20 @@ def extractRecordFeatures(x, locationDict, eventDict):
     else:    
         dist = 0.5
     
-    featureDict['Dist'] = dist 
+    def updateDistFeature(dist, interval=.2, max_miles=5):
+        '''
+        Returns indicator functions for distance, in intervals of |interval| miles, up to |max_miles| miles
+
+        feature is 1 if dist <= _d
+        '''
+        _d = 0
+        while _d < max_miles:
+            _d += interval
+            if dist <= _d:
+                featureDict['Dist<='+str(_d)] = 1
+
+    # featureDict['Dist'] = dist 
+    updateDistFeature(dist, .2, 5)
         
     
     def checkEvent(timeTS):

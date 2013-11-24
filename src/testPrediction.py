@@ -14,7 +14,7 @@ eventDict = readEvents.getEventDict()
 readLocation = util.ReadLocation("../idLocation/helloLocation.txt")         
 locDict = readLocation.getLocationDict()
 
-def test(filename, locDict, eventDict, weightsVector):
+def test(filename, locDict, eventDict, weightsVector, plotting=0):
     fp = open("../data"+filename, 'r')
     count = 0
     sumErr = 0
@@ -50,22 +50,28 @@ def test(filename, locDict, eventDict, weightsVector):
     avgErr = sumErr/count
     print "--average error rate--", avgErr
 
-    timeVec = linspace(6,22,len(Yvec))
-    plt.plot(timeVec, Yvec,'b-')
-    plt.plot(timeVec, estimateVec,'r-')
-    plt.legend(['real','prediction'],fontsize=14)
-    plt.ylabel('number of available spot', fontsize=14)
-    plt.xlabel('Time',fontsize=14)
-    plt.title(filename,fontsize=14)
-    plt.show()
+    if plotting:
+        timeVec = linspace(6,22,len(Yvec))
+        plt.plot(timeVec, Yvec,'b-')
+        plt.plot(timeVec, estimateVec,'r-')
+        plt.legend(['real','prediction'],fontsize=14)
+        plt.ylabel('number of available spot', fontsize=14)
+        plt.xlabel('Time',fontsize=14)
+        plt.title(filename,fontsize=14)
+        plt.show()
 
 for lot in lots:
     # load the weights
     with open('../weights/'+lot+'weights.p', 'rb') as fp:
         weights = pickle.load(fp)
     fp.close()
-    # print weights
-    filename = "/"+lot+"/"+lot+"_2013_09_05.csv"
+    
+    print '\n**********************'
+    print "testing on lot", lot
 
-    test(filename, locDict, eventDict, weights)
+    days = ['03', '04', '05']   # which days to test
+    for day in days:
+        filename = "/"+lot+"/"+lot+"_2013_09_"+day+".csv"
+        print filename
+        test(filename, locDict, eventDict, weights)
 

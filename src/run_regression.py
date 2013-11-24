@@ -40,6 +40,9 @@ def readFileUpdateWeight( filepath = 'NA', locDict='NA', eventDict='NA', weights
     
     return _weightsVector
 
+def printingWeights(weights):
+    for key in weights:
+        print key, weights[key]
 
 def linearRegression(lot):
     '''
@@ -67,6 +70,7 @@ def linearRegression(lot):
     with open('../weights/'+lot+'weights.json', 'wb') as fp:
         json.dump(weights, fp)
     fp.close()
+    printingWeights(weights)
 
 # run regression on all the lots
 for lot in lots:
