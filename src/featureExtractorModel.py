@@ -1,6 +1,58 @@
 from collections import Counter
 import util, datetime
 
+initialHour = 6
+finalHour = 22
+
+def getTimeFeatureEveryNHour(N):
+    timeFeature = list()
+    numTimeFeatures = (finalHour-initialHour)/N    # a feature every half hour
+    assert numTimeFeatures >= 1
+    endHour = initialHour
+    for ind in range(numTimeFeatures):
+        startHour = endHour
+        endHour = startHour+N
+        startMin = 0
+        endMin = 0
+        timeFeature.append(((startHour, startMin), (endHour, endMin)))
+        # timeFeatureKey = str(startHour)+':'+str(startMin)+'-'+str(endHour)+':'+str(endMin)
+        # print timeFeatureKey
+    return timeFeature
+
+def getTimeFeatureEveryNMin(N):
+    '''
+    return the designed time feature, where time is spaced every N minutes. 
+    Assert that 60 is divisible by N
+    '''
+    n = 60/N
+    timeFeature = list()
+    numTimeFeatures = (finalHour-initialHour)*n    # a feature every half hour
+    for ind in range(numTimeFeatures):
+        startHour = initialHour+ind/n
+        endHour = initialHour+(ind+1)/n
+        whichMin = ind % n
+        startMin = N*whichMin
+        endMin = N*(whichMin+1)
+        if endMin == 60:
+            endMin = 0
+        timeFeature.append(((startHour, startMin), (endHour, endMin)))
+    return timeFeature
+
+timeFeature10min = getTimeFeatureEveryNMin(10)
+timeFeature20min = getTimeFeatureEveryNMin(20)
+timeFeature30min = getTimeFeatureEveryNMin(30)
+# print timeFeature30min
+timeFeature1hr = getTimeFeatureEveryNHour(1)
+timeFeature2hr = getTimeFeatureEveryNHour(2)
+
+# for i in range(len(timeFeature30min)):
+#     startTuple, endTuple = timeFeature30min[i]
+# for startTuple, endTuple in timeFeature30min:
+#     print startTuple, endTuple
+#     startHour, startMin = startTuple
+#     print startHour, startMin
+#     endHour, endMin = endTuple
+
 def extractRecordFeatures(x, locationDict, eventDict):
     """
     Extract the features from a string line 
@@ -31,8 +83,6 @@ def extractRecordFeatures(x, locationDict, eventDict):
     # 
     day, hour, minute = timeRecord			
     
-    initialHour = 6
-    finalHour = 22
     # if earlier than 6am or later than 10pm, return empty feature  
     if hour < initialHour or hour >= finalHour:      
         return (featureDict, 0)
@@ -44,28 +94,39 @@ def extractRecordFeatures(x, locationDict, eventDict):
     # update the day feature
     featureDict[dayDict[day]] = 1  
 
-    numTimeFeatures = (finalHour-initialHour)*2+1    # a feature every half hour
+    # update time feature
+    def updateTimeFeature(timeFeature):
+        # print '-----'
+        # print timeFeature
+        # print len(timeFeature)
+        # for i in range(len(timeFeature)):
+        #     print i
+        #     startTuple, endTuple = timeFeature[i]
+        
+        for startTuple, endTuple in timeFeature:
+            # print startTuple, endTuple
+            startHour, startMin = startTuple
+            endHour, endMin = endTuple
 
-    # featureDict['time'] = hour*60+minute
-    for ind in range(numTimeFeatures):
-        startHour = initialHour+ind/2
-        finalHour = initialHour+(ind+1)/2
-        if startHour == finalHour:
-            startMin = 0
-            endMin = 30
-        else:
-            startMin = 30
-            endMin = 0
 
-        startHourMin = startHour*60+startMin
-        finalHourMin = finalHour*60+endMin
+            startHourMin = startHour*60+startMin
+            finalHourMin = endHour*60+endMin
 
-        actualHourMin = hour*60+minute
+            actualHourMin = hour*60+minute
+            # print actualHourMin
+            # print startHourMin, finalHourMin
 
-        if actualHourMin >= startHourMin and actualHourMin < finalHourMin:
-            timeFeatureKey = str(startHour)+':'+str(startMin)+'-'+str(finalHour)+':'+str(endMin)
-            featureDict[timeFeatureKey] = 1
-            break
+            if actualHourMin >= startHourMin and actualHourMin < finalHourMin:
+                timeFeatureKey = str(startHour)+':'+str(startMin)+'-'+str(endHour)+':'+str(endMin)
+                featureDict[timeFeatureKey] = 1
+                # print timeFeatureKey
+                break
+
+    # updateTimeFeature(timeFeature10min)
+    updateTimeFeature(timeFeature20min)
+    # updateTimeFeature(timeFeature30min)
+    # updateTimeFeature(timeFeature1hr)
+    updateTimeFeature(timeFeature2hr)
 
     dist = 0
     if locationDict[_tempFeatureList[1]]: 
@@ -91,32 +152,33 @@ def extractRecordFeatures(x, locationDict, eventDict):
     
     
     
-    def checkPrice(price, featureDict):
-        currPrice = float(price) 
-        #print "current price", currPrice        
-        if currPrice < 0: 
-            featureDict = Counter()
-            return featureDict
+    # def checkPrice(price, featureDict):
+    #     currPrice = float(price) 
+    #     #print "current price", currPrice        
+    #     if currPrice < 0: 
+    #         featureDict = Counter()
+    #         return featureDict
         
-        if currPrice >= 0 and currPrice < 1:
-            featureDict['price_0-1'] = 1
-        elif currPrice >= 1 and currPrice < 2:    
-            featureDict['price_1-2'] = 1
-        elif currPrice >= 2 and currPrice < 3:         
-            featureDict['price_2-3'] = 1
-        elif currPrice >= 3 and currPrice < 4:
-            featureDict['price_3-4'] = 1
-        elif currPrice >= 4 and currPrice < 5:    
-            featureDict['price_4-5'] = 1
-        elif currPrice >= 5 and currPrice < 6:
-            featureDict['price_5-6'] = 1
-        elif currPrice >= 6 and currPrice < 7:    
-            featureDict['price_6-7'] = 1    
-        else:
-            featureDict['price_gte7'] = 1                         
-    
+    #     if currPrice >= 0 and currPrice < 1:
+    #         featureDict['price_0-1'] = 1
+    #     elif currPrice >= 1 and currPrice < 2:    
+    #         featureDict['price_1-2'] = 1
+    #     elif currPrice >= 2 and currPrice < 3:         
+    #         featureDict['price_2-3'] = 1
+    #     elif currPrice >= 3 and currPrice < 4:
+    #         featureDict['price_3-4'] = 1
+    #     elif currPrice >= 4 and currPrice < 5:    
+    #         featureDict['price_4-5'] = 1
+    #     elif currPrice >= 5 and currPrice < 6:
+    #         featureDict['price_5-6'] = 1
+    #     elif currPrice >= 6 and currPrice < 7:    
+    #         featureDict['price_6-7'] = 1    
+    #     else:
+    #         featureDict['price_gte7'] = 1                         
+    # checkPrice(_tempFeatureList[-1], featureDict)
+
     checkEvent(_tempFeatureList[0]) # here call the internal function to check the events feature    
-    checkPrice(_tempFeatureList[-1], featureDict)
+    
     
 
     # extract label y

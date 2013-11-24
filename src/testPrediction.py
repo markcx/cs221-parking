@@ -3,9 +3,10 @@ import util
 import featureExtractorModel as model 
 import cPickle as pickle
 import matplotlib.pyplot as plt
+from numpy import linspace
 
 lots = ['935', '202031', '326052']
-# lots = os.listdir('../test')      # get a list of all lots in output directory
+# lots = os.listdir('../data')      # get a list of all lots in output directory
 
 readEvents = util.ReadEvents("../eventsSchedule/event_schedule2.csv")
 eventDict = readEvents.getEventDict()
@@ -14,7 +15,7 @@ readLocation = util.ReadLocation("../idLocation/helloLocation.txt")
 locDict = readLocation.getLocationDict()
 
 def test(filename, locDict, eventDict, weightsVector):
-    fp = open("../test"+filename, 'r')
+    fp = open("../data"+filename, 'r')
     count = 0
     sumErr = 0
 
@@ -30,15 +31,15 @@ def test(filename, locDict, eventDict, weightsVector):
 
         estimate = util.sparseVectorDotProduct(weightsVector, phi)
         estimate = round(estimate)
-        print "==========show feature vector==========",phi 
-        print "real", y, "est:", estimate, "diff error", y-estimate
+        # print "==========show feature vector==========",phi 
+        # print "real", y, "est:", estimate, "diff error", y-estimate
 
         if abs(y-estimate) < 1e-3:
-            print "error rate", 0
+            # print "error rate", 0
             sumErr += 0
             count += 1
         elif y > 0:
-            print "error rate", (y-estimate)/y
+            # print "error rate", (y-estimate)/y
             count +=1
             sumErr += abs(y-estimate) / y
 
@@ -49,11 +50,13 @@ def test(filename, locDict, eventDict, weightsVector):
     avgErr = sumErr/count
     print "--average error rate--", avgErr
 
-    plt.plot(Yvec,'b-')
-    plt.plot(estimateVec,'r-')
-    plt.legend(['real','prediction'])
-    plt.ylabel('number of available spot')
-    plt.title(filename)
+    timeVec = linspace(6,22,len(Yvec))
+    plt.plot(timeVec, Yvec,'b-')
+    plt.plot(timeVec, estimateVec,'r-')
+    plt.legend(['real','prediction'],fontsize=14)
+    plt.ylabel('number of available spot', fontsize=14)
+    plt.xlabel('Time',fontsize=14)
+    plt.title(filename,fontsize=14)
     plt.show()
 
 for lot in lots:
@@ -62,7 +65,7 @@ for lot in lots:
         weights = pickle.load(fp)
     fp.close()
     # print weights
-    filename = "/"+lot+"/"+lot+"_2013_09_03.csv"
+    filename = "/"+lot+"/"+lot+"_2013_09_05.csv"
 
     test(filename, locDict, eventDict, weights)
 

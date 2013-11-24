@@ -6,7 +6,7 @@ import cPickle as pickle
 import json
 
 lots = ['935', '202031', '326052']
-# lots = os.listdir('../train')      # get a list of all lots in train directory
+# lots = os.listdir('../data')      # get a list of all lots in train directory
 
 readLocation = util.ReadLocation("../idLocation/helloLocation.txt")         
 locDict = readLocation.getLocationDict()
@@ -49,12 +49,15 @@ def linearRegression(lot):
     '''
     weights = Counter()
 
-    files = util.readFileList("../train/"+lot)
+    files = util.readFileList("../data/"+lot)
 
     # for i in range(3,48):
     for _fname in files:
-        # _fname = "../train/"+lot+"/"+files[i]
-        weights = readFileUpdateWeight(_fname, locDict, eventDict, weights, 0.1) 
+        
+        if _fname[-9:-7] == '07' or _fname[-9:-7] == '08':  # only train on Jul and Aug data
+            # print _fname
+            # _fname = "../train/"+lot+"/"+files[i]
+            weights = readFileUpdateWeight(_fname, locDict, eventDict, weights, 0.1) 
 
     # write weights to file
     with open('../weights/'+lot+'weights.p', 'wb') as fp:

@@ -3,6 +3,7 @@
 Created on Thu Oct 17 18:52:33 2013
 
 @author: markxchen
+This code will cluster the parking lots
 """
 '''
 http://www.mapquestapi.com/traffic/v2/flow?key=YOUR_KEY_HERE&mapLat=38.828712&mapLng=-77.036953&mapHeight=400&mapWidth=400&mapScale=108335
