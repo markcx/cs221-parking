@@ -4,6 +4,17 @@ import util, datetime
 initialHour = 6
 finalHour = 22
 
+#### Still need to add:
+# - implement previous day feature
+#     - if predicting next day
+#     - keep track of list of prediction for each day for one week
+#         - list comprehension of local averages
+# - discretize other feature - done
+#     <.2
+#     <.4
+# - change learning rate - done
+#     - alpha = 1/t^.5
+
 def getTimeFeatureEveryNHour(N):
     timeFeature = list()
     numTimeFeatures = (finalHour-initialHour)/N    # a feature every half hour
