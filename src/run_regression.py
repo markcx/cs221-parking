@@ -15,19 +15,23 @@ readEvents = util.ReadEvents("../eventsSchedule/event_schedule2.csv")
 eventDict = readEvents.getEventDict()
 
 # linear regression algorithm
-def readFileUpdateWeight( filepath = 'NA', locDict='NA', eventDict='NA', weightsVector='NA', alpha=0.9):
+def readFileUpdateWeight( filepath = 'NA', locDict='NA', eventDict='NA', weightsVector='NA', alpha=.5, eta_0=1.):
     '''
     Reads each line in the filepath and update weightsVector (a Counter obj representing
     sparse vector) by stochastic gradient descent
-        w[i] = w[i] + alpha*(y[i]-dotProd(w,phi))*phi[i]
+        w[i] = w[i] + eta*(y[i]-dotProd(w,phi))*phi[i]
+
+    update learning rate by eta = eta_0/t^alpha
     '''
     _weightsVector = weightsVector.copy()
     if not os.path.exists(filepath):    
         raise "File doesn't exist!!"
         return _weightsVector
     else:
+        
         fp = open(filepath, 'r')
-        for line in fp:
+        for t, line in enumerate(fp):
+            eta = eta_0/(t+1)**alpha
             phi, y = model.extractRecordFeatures(line, locDict, eventDict) 
             if len(phi) <= 0 or y < 0 :    # if nothing changed for this line
                 continue    
@@ -35,7 +39,7 @@ def readFileUpdateWeight( filepath = 'NA', locDict='NA', eventDict='NA', weights
             dotProd = util.sparseVectorDotProduct(phi, _weightsVector)
             for key in phi:
                 # print "-------",y-dotProd
-                _weightsVector[key]  =  _weightsVector[key] + alpha * (y - dotProd) * phi[key]
+                _weightsVector[key]  =  _weightsVector[key] + eta * (y - dotProd) * phi[key]
         fp.close()  
     
     return _weightsVector
@@ -60,7 +64,7 @@ def linearRegression(lot):
         if _fname[-9:-7] == '07' or _fname[-9:-7] == '08':  # only train on Jul and Aug data
             # print _fname
             # _fname = "../train/"+lot+"/"+files[i]
-            weights = readFileUpdateWeight(_fname, locDict, eventDict, weights, 0.1) 
+            weights = readFileUpdateWeight(_fname, locDict, eventDict, weights) 
 
     # write weights to file
     with open('../weights/'+lot+'weights.p', 'wb') as fp:
