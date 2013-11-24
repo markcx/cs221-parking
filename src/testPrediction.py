@@ -24,7 +24,7 @@ def test(filename, locDict, eventDict, weightsVector, plotting=0):
 
     for line in fp:
         #print line
-        phi, y = model.extractRecordFeatures(line,locDict, eventDict)
+        phi, y, p = model.extractRecordFeatures(line,locDict, eventDict)
 
         if len(phi)<=0 or y < 0:
             continue
@@ -62,7 +62,7 @@ def test(filename, locDict, eventDict, weightsVector, plotting=0):
 
 for lot in lots:
     # load the weights
-    with open('../weights/'+lot+'weights.p', 'rb') as fp:
+    with open('../weights/'+lot+'AvailNumWeights.p', 'rb') as fp:
         weights = pickle.load(fp)
     fp.close()
     

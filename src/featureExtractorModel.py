@@ -85,7 +85,7 @@ def extractRecordFeatures(x, locationDict, eventDict):
     
     # if earlier than 6am or later than 10pm, return empty feature  
     if hour < initialHour or hour >= finalHour:      
-        return (featureDict, 0)
+        return (featureDict, 0, 0)
       
     dayDict = {0:'Mon', 1:'Tues', 2:'Wed', 3:'Thu', 4:'Fri', 5:'Sat', 6:'Sun'}
     
@@ -163,36 +163,33 @@ def extractRecordFeatures(x, locationDict, eventDict):
             if currentTS > eventDict['ST'][i] and currentTS < eventDict['ET'][i]:
                 featureDict[eventDict['NAME'][i]] = 1
     
-    
-    
-    # def checkPrice(price, featureDict):
-    #     currPrice = float(price) 
-    #     #print "current price", currPrice        
-    #     if currPrice < 0: 
-    #         featureDict = Counter()
-    #         return featureDict
+    def checkPrice(price, featureDict):
+        currPrice = float(price) 
+        #print "current price", currPrice        
+        if currPrice < 0: 
+            featureDict = Counter()
+            return featureDict
         
-    #     if currPrice >= 0 and currPrice < 1:
-    #         featureDict['price_0-1'] = 1
-    #     elif currPrice >= 1 and currPrice < 2:    
-    #         featureDict['price_1-2'] = 1
-    #     elif currPrice >= 2 and currPrice < 3:         
-    #         featureDict['price_2-3'] = 1
-    #     elif currPrice >= 3 and currPrice < 4:
-    #         featureDict['price_3-4'] = 1
-    #     elif currPrice >= 4 and currPrice < 5:    
-    #         featureDict['price_4-5'] = 1
-    #     elif currPrice >= 5 and currPrice < 6:
-    #         featureDict['price_5-6'] = 1
-    #     elif currPrice >= 6 and currPrice < 7:    
-    #         featureDict['price_6-7'] = 1    
-    #     else:
-    #         featureDict['price_gte7'] = 1                         
-    # checkPrice(_tempFeatureList[-1], featureDict)
+        if currPrice >= 0 and currPrice < 1:
+            featureDict['price_0-1'] = 1
+        elif currPrice >= 1 and currPrice < 2:    
+            featureDict['price_1-2'] = 1
+        elif currPrice >= 2 and currPrice < 3:         
+            featureDict['price_2-3'] = 1
+        elif currPrice >= 3 and currPrice < 4:
+            featureDict['price_3-4'] = 1
+        elif currPrice >= 4 and currPrice < 5:    
+            featureDict['price_4-5'] = 1
+        elif currPrice >= 5 and currPrice < 6:
+            featureDict['price_5-6'] = 1
+        elif currPrice >= 6 and currPrice < 7:    
+            featureDict['price_6-7'] = 1    
+        else:
+            featureDict['price_gte7'] = 1                         
+    # checkPrice(currPrice, featureDict)
+    currPrice = _tempFeatureList[-1]    # current price
 
     checkEvent(_tempFeatureList[0]) # here call the internal function to check the events feature    
-    
-    
 
     # extract label y
     if int(_tempFeatureList[3]) < 0 or int(_tempFeatureList[2]) < 0 :
@@ -200,6 +197,6 @@ def extractRecordFeatures(x, locationDict, eventDict):
     else:
         avlNum = int(_tempFeatureList[3]) - int(_tempFeatureList[2])    
     
-    
-    return (featureDict, avlNum)
+
+    return (featureDict, avlNum, currPrice)
     

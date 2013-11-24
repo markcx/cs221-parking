@@ -15,7 +15,7 @@ readEvents = util.ReadEvents("../eventsSchedule/event_schedule2.csv")
 eventDict = readEvents.getEventDict()
 
 # linear regression algorithm
-def readFileUpdateWeight( filepath = 'NA', locDict='NA', eventDict='NA', weightsVector='NA', alpha=.5, eta_0=1.):
+def readFileUpdateWeight(AvailNum_weightsVector, Price_weightsVector,  filepath = 'NA', locDict='NA', eventDict='NA', alpha=.5, eta_0=1.):
     '''
     Reads each line in the filepath and update weightsVector (a Counter obj representing
     sparse vector) by stochastic gradient descent
@@ -23,26 +23,28 @@ def readFileUpdateWeight( filepath = 'NA', locDict='NA', eventDict='NA', weights
 
     update learning rate by eta = eta_0/t^alpha
     '''
-    _weightsVector = weightsVector.copy()
+    # _AvailNum_weightsVector = AvailNum_weightsVector.copy()
+    # _Price_weightsVector = Price_weightsVector.copy()
     if not os.path.exists(filepath):    
         raise "File doesn't exist!!"
         return _weightsVector
     else:
-        
         fp = open(filepath, 'r')
         for t, line in enumerate(fp):
             eta = eta_0/(t+1)**alpha
-            phi, y = model.extractRecordFeatures(line, locDict, eventDict) 
-            if len(phi) <= 0 or y < 0 :    # if nothing changed for this line
+            
+            phi, availNum, currPrice = model.extractRecordFeatures(line, locDict, eventDict) 
+            if len(phi) <= 0 or availNum < 0 :    # if nothing changed for this line
                 continue    
             
-            dotProd = util.sparseVectorDotProduct(phi, _weightsVector)
+            AvailNum_dotProd = util.sparseVectorDotProduct(phi, AvailNum_weightsVector)
+            # Price_dotProd = util.sparseVectorDotProduct(phi, Price_weightsVector)
             for key in phi:
                 # print "-------",y-dotProd
-                _weightsVector[key]  =  _weightsVector[key] + eta * (y - dotProd) * phi[key]
+                AvailNum_weightsVector[key]  += eta * (availNum - AvailNum_dotProd) * phi[key]
         fp.close()  
     
-    return _weightsVector
+    return (AvailNum_weightsVector, Price_weightsVector)
 
 def printingWeights(weights):
     for key in weights:
@@ -54,7 +56,9 @@ def linearRegression(lot):
 
     |lot| is a string denoting the lotID, e.g. lot='935'
     '''
-    weights = Counter()
+     
+    AvailNum_weightsVector = Counter()
+    Price_weightsVector = Counter()
 
     files = util.readFileList("../data/"+lot)
 
@@ -64,17 +68,24 @@ def linearRegression(lot):
         if _fname[-9:-7] == '07' or _fname[-9:-7] == '08':  # only train on Jul and Aug data
             # print _fname
             # _fname = "../train/"+lot+"/"+files[i]
-            weights = readFileUpdateWeight(_fname, locDict, eventDict, weights) 
+            AvailNum_weightsVector, Price_weightsVector = readFileUpdateWeight(AvailNum_weightsVector, Price_weightsVector, _fname, locDict, eventDict) 
 
     # write weights to file
-    with open('../weights/'+lot+'weights.p', 'wb') as fp:
-        pickle.dump(weights, fp)
+    with open('../weights/'+lot+'AvailNumWeights.p', 'wb') as fp:
+        pickle.dump(AvailNum_weightsVector, fp)
     fp.close()
 
-    with open('../weights/'+lot+'weights.json', 'wb') as fp:
-        json.dump(weights, fp)
+    with open('../weights/'+lot+'AvailNumWeights.json', 'wb') as fp:
+        json.dump(AvailNum_weightsVector, fp)
     fp.close()
-    printingWeights(weights)
+    with open('../weights/'+lot+'Price_weights.p', 'wb') as fp:
+        pickle.dump(Price_weightsVector, fp)
+    fp.close()
+
+    with open('../weights/'+lot+'Price_weights.json', 'wb') as fp:
+        json.dump(Price_weightsVector, fp)
+    fp.close()
+    # printingWeights(weights)
 
 # run regression on all the lots
 for lot in lots:
