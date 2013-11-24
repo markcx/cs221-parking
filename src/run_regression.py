@@ -18,7 +18,7 @@ eventDict = readEvents.getEventDict()
 def readFileUpdateWeight(AvailNum_weightsVector, Price_weightsVector,  filepath = 'NA', locDict='NA', eventDict='NA', alpha=.5, eta_0=1.):
     '''
     Reads each line in the filepath and update weightsVector (a Counter obj representing
-    sparse vector) by stochastic gradient descent
+    sparse vector) by stochastic gradient descent, for predicting both AvailNum and Price
         w[i] = w[i] + eta*(y[i]-dotProd(w,phi))*phi[i]
 
     update learning rate by eta = eta_0/t^alpha
@@ -34,14 +34,15 @@ def readFileUpdateWeight(AvailNum_weightsVector, Price_weightsVector,  filepath 
             eta = eta_0/(t+1)**alpha
             
             phi, availNum, currPrice = model.extractRecordFeatures(line, locDict, eventDict) 
-            if len(phi) <= 0 or availNum < 0 :    # if nothing changed for this line
+            if len(phi) <= 0 or availNum < 0 or currPrice < 0:    # if nothing changed for this line
                 continue    
             
             AvailNum_dotProd = util.sparseVectorDotProduct(phi, AvailNum_weightsVector)
-            # Price_dotProd = util.sparseVectorDotProduct(phi, Price_weightsVector)
+            Price_dotProd = util.sparseVectorDotProduct(phi, Price_weightsVector)
             for key in phi:
                 # print "-------",y-dotProd
                 AvailNum_weightsVector[key]  += eta * (availNum - AvailNum_dotProd) * phi[key]
+                Price_weightsVector[key]  += eta * (currPrice - Price_dotProd) * phi[key]
         fp.close()  
     
     return (AvailNum_weightsVector, Price_weightsVector)

@@ -164,7 +164,6 @@ def extractRecordFeatures(x, locationDict, eventDict):
                 featureDict[eventDict['NAME'][i]] = 1
     
     def checkPrice(price, featureDict):
-        currPrice = float(price) 
         #print "current price", currPrice        
         if currPrice < 0: 
             featureDict = Counter()
@@ -187,7 +186,7 @@ def extractRecordFeatures(x, locationDict, eventDict):
         else:
             featureDict['price_gte7'] = 1                         
     # checkPrice(currPrice, featureDict)
-    currPrice = _tempFeatureList[-1]    # current price
+    currPrice = float(_tempFeatureList[-1])    # current price
 
     checkEvent(_tempFeatureList[0]) # here call the internal function to check the events feature    
 
