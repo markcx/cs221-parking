@@ -56,11 +56,20 @@ def test(filename, locDict, eventDict, AvailNum_weightsVector, Price_weightsVect
     print "Average Error: (availNum, price) = ", avgErr
 
     if plotting:
-        timeVec = linspace(6,22,len(Yvec))
-        plt.plot(timeVec, Yvec,'b-')
-        plt.plot(timeVec, estimateVec,'r-')
+        timeVec = linspace(6,22,len(availNumVec))
+        plt.plot(timeVec, availNumVec,'b-')
+        plt.plot(timeVec, availNumEstimateVec,'r-')
         plt.legend(['real','prediction'],fontsize=14)
         plt.ylabel('number of available spot', fontsize=14)
+        plt.xlabel('Time',fontsize=14)
+        plt.title(filename,fontsize=14)
+        plt.show()
+
+        timeVec = linspace(6,22,len(priceNumVec))
+        plt.plot(timeVec, priceNumVec,'b-')
+        plt.plot(timeVec, priceEstimateVec,'r-')
+        plt.legend(['real','prediction'],fontsize=14)
+        plt.ylabel('Price ($)', fontsize=14)
         plt.xlabel('Time',fontsize=14)
         plt.title(filename,fontsize=14)
         plt.show()

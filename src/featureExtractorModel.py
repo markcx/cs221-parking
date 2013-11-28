@@ -160,8 +160,8 @@ def extractRecordFeatures(x, locationDict, eventDict):
             if dist <= _d:
                 featureDict['Dist<='+str(_d)] = 1
 
-    # featureDict['Dist'] = dist 
-    updateDistFeature(dist, .2, 5)
+    featureDict['Dist'] = dist 
+    # updateDistFeature(dist, .2, 5)
         
     
     def checkEvent(timeTS):
