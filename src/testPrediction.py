@@ -18,7 +18,7 @@ def test(filename, locDict, eventDict, AvailNum_weightsVector, Price_weightsVect
     fp = open("../data"+filename, 'r')
 
     count = [0, 0]  # [availNum, price]
-    sumErr = [0., 0.]  # [availNum, price]
+    sumErr = [0., 0.]  # [availNum, price]  
 
     availNumVec = list()
     availNumEstimateVec = list()
@@ -52,7 +52,7 @@ def test(filename, locDict, eventDict, AvailNum_weightsVector, Price_weightsVect
         
         
     fp.close()
-    avgErr = (sumErr[0]/count[0], sumErr[1]/count[1])
+    avgErr = (sumErr[0]/count[0], sumErr[1]/count[1])   # mean absolute error
     print "Average Error: (availNum, price) = ", avgErr
 
     if plotting:
