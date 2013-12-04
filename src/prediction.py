@@ -9,7 +9,7 @@ def filterLotsByMaxDist(final_dest, max_dist):
 		lotLocation = tuple(float(v) for v in locDict[lot])
 		# t = tuple(int(v) for v in re.findall("[0-9]+", lotLocation))		
 		dist = util.calculateDistance(final_dest, lotLocation)
-		print lot, lotLocation, dist, type(lot)
+		print lot, lotLocation, dist
 		if dist <= max_dist:
 			lots_within_max_dist.append(lot)
 
@@ -25,6 +25,12 @@ def parseArrivalTime(arrival_time):
 	return (day, hour, minute)
 
 def predictLot(filename, time, AvailNum_weightsVector, Price_weightsVector, lotid, location, final_dest):
+	'''
+	Predicts the availNum and price at |time| by averaging the prediction result from (time-timeBuffer) to (time)
+
+	Returns a tuple of the prediction result
+	'''
+
 	fp = open("../data"+filename, 'r')
 	HourMin = time[0]*60+time[1]
 	timeBuffer = 10		# the time (in minutes), ahead of arrival_time, that we will consider when we do prediction
@@ -40,9 +46,9 @@ def predictLot(filename, time, AvailNum_weightsVector, Price_weightsVector, loti
 
 		if HourMin - currHourMin <= timeBuffer:
 			count += 1
-	        phi, availNum, price = model.extractRecordFeatures(line,locDict, eventDict)
-	        if len(phi)<=0 or availNum < 0 or price < 0:
-	            continue
+			phi, availNum, price = model.extractRecordFeatures(line,locDict, eventDict)
+			if len(phi)<=0 or availNum < 0 or price < 0:
+			    continue
 			availNumEstimate += round(util.sparseVectorDotProduct(AvailNum_weightsVector, phi))
 			priceEstimate += round(util.sparseVectorDotProduct(Price_weightsVector, phi))
 
@@ -80,20 +86,20 @@ def predictionForUser(user_input):
 	lotResultVec = list()
 	for lot in LotsToTry:
 		lotLocation = tuple(float(v) for v in locDict[lot])
-	    # load the weights
-	    with open('../weights/'+lot+'AvailNumWeights.p', 'rb') as fp:
-	        AvailNum_weightsVector = pickle.load(fp)
-	    fp.close()
+		# load the weights
+		with open('../weights/'+lot+'AvailNumWeights.p', 'rb') as fp:
+		    AvailNum_weightsVector = pickle.load(fp)
+		fp.close()
 
-	    with open('../weights/'+lot+'Price_weights.p', 'rb') as fp:
-	        Price_weightsVector = pickle.load(fp)
-	    fp.close()
-	    
-	    filename = "/"+lot+"/"+lot+"_2013_09_"+day+".csv"
-	    print filename
-	    lotResult = predictLot(filename, (hour, minute), AvailNum_weightsVector, Price_weightsVector, lot, lotLocation, final_dest)
-	    
-	    lotResultVec.append(lotResult)
+		with open('../weights/'+lot+'Price_weights.p', 'rb') as fp:
+		    Price_weightsVector = pickle.load(fp)
+		fp.close()
+
+		filename = "/"+lot+"/"+lot+"_2013_09_"+day+".csv"
+		print filename
+		lotResult = predictLot(filename, (hour, minute), AvailNum_weightsVector, Price_weightsVector, lot, lotLocation, final_dest)
+
+		lotResultVec.append(lotResult)
 
 	return lotResultVec
 
