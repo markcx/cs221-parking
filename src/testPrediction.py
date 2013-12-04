@@ -42,6 +42,9 @@ def test(filename, locDict, eventDict, AvailNum_weightsVector, Price_weightsVect
         return (sumErr, count)
 
     for line in fp:
+        
+        _temp = util.exactSingleLineFromFine(line)
+        print "*****************", _temp
         phi, availNum, price = model.extractRecordFeatures(line,locDict, eventDict)
 
         if len(phi)<=0 or availNum < 0 or price < 0:
@@ -87,11 +90,12 @@ for lot in lots:
     print '\n**********************'
     print "testing on lot", lot
 
-    days = ['03', '04', '05']   # which days to test
+    # days = ['03', '04', '05']   # which days to test
+    days = ['03']
     for day in days:
         filename = "/"+lot+"/"+lot+"_2013_09_"+day+".csv"
         print filename
-        test(filename, locDict, eventDict, AvailNum_weightsVector, Price_weightsVector)
+        test(filename, locDict, eventDict, AvailNum_weightsVector, Price_weightsVector,1)
         # test2(filename, locDict, eventDict, AvailNum_weightsVector)
 
 def test2(filename, locDict, eventDict, weightsVector, plotting=0):

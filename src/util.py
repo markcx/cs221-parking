@@ -74,6 +74,16 @@ def readFileList(filepath):
 
     return files
 
+def exactSingleLineFromFine(line):
+    '''
+    Parse |line| into a vector of items
+    '''
+    _tempFeatureList = [] 
+    for item in line.split(','):
+        #print "show items", item
+        item = item.strip(' \"|\r|\n ')
+        _tempFeatureList.append(item)
+    return _tempFeatureList
 
 def convertTimeStampToDate(ts=None):
     ts = ts.strip(" \" ")
@@ -82,12 +92,12 @@ def convertTimeStampToDate(ts=None):
         y = dateT.year
         m = dateT.month
         d = dateT.day
-    
+
         dayInWeek = datetime.date(y, m, d).weekday()   
         hourInDay = dateT.hour
         minInHour = dateT.minute    
         return (dayInWeek, hourInDay, minInHour)        
-    
+
     return (-1, -1)  
 
 
@@ -222,5 +232,10 @@ class ReadLocation():
             return self.locationDict
         else:
             return [] 
-        
+
+readEvents = ReadEvents("../eventsSchedule/event_schedule2.csv")
+eventDict = readEvents.getEventDict()
+
+readLocation = ReadLocation("../idLocation/helloLocation.txt")         
+locDict = readLocation.getLocationDict()
         
