@@ -1,21 +1,39 @@
-import os, util, re
+import os, util, re, math
+import ParkingMDP
+import blackJackSubmission as submission
+import cPickle as pickle
+import featureExtractorModel as model 
+
+'''
+say user wants to go to:
+	AT&T Park
+	Pier 39
+	Market St
+'''
+
+DestLocation = {
+	'AT&T Park': (37.778635,-122.39051),
+	'Pier 39': (37.805105,-122.416376),
+	'Civic Center': (37.781162,-122.4132)
+}
+
 
 def filterLotsByMaxDist(final_dest, max_dist):
 	lots = os.listdir('../data')      # get a list of all lots in output directory
-	# readLocation = util.ReadLocation("../idLocation/helloLocation.txt")         
 	locDict = util.locDict
 	lots_within_max_dist = list()
 	for lot in lots:
 		lotLocation = tuple(float(v) for v in locDict[lot])
-		# t = tuple(int(v) for v in re.findall("[0-9]+", lotLocation))		
 		dist = util.calculateDistance(final_dest, lotLocation)
-		print lot, lotLocation, dist
+		
 		if dist <= max_dist:
+			# print lot, lotLocation, dist
 			lots_within_max_dist.append(lot)
 
+	# print len(lots_within_max_dist)
 	return lots_within_max_dist
 
-filterLotsByMaxDist((40,-120),2)
+# filterLotsByMaxDist(DestLocation['AT&T Park'],.5)
 
 def parseArrivalTime(arrival_time):
 	day = arrival_time[3:5]		# in string
@@ -24,7 +42,7 @@ def parseArrivalTime(arrival_time):
 
 	return (day, hour, minute)
 
-def predictLot(filename, time, AvailNum_weightsVector, Price_weightsVector, lotid, location, final_dest):
+def predictLot(filename, time, AvailNum_weightsVector, Price_weightsVector, lotid, lotLocation, final_dest):
 	'''
 	Predicts the availNum and price at |time| by averaging the prediction result from (time-timeBuffer) to (time)
 
@@ -46,11 +64,11 @@ def predictLot(filename, time, AvailNum_weightsVector, Price_weightsVector, loti
 
 		if HourMin - currHourMin <= timeBuffer:
 			count += 1
-			phi, availNum, price = model.extractRecordFeatures(line,locDict, eventDict)
+			phi, availNum, price = model.extractRecordFeatures(line,util.locDict, util.eventDict)
 			if len(phi)<=0 or availNum < 0 or price < 0:
 			    continue
 			availNumEstimate += round(util.sparseVectorDotProduct(AvailNum_weightsVector, phi))
-			priceEstimate += round(util.sparseVectorDotProduct(Price_weightsVector, phi))
+			priceEstimate += util.sparseVectorDotProduct(Price_weightsVector, phi)
 
 	# averaging
 	availNumEstimate /= count
@@ -58,7 +76,7 @@ def predictLot(filename, time, AvailNum_weightsVector, Price_weightsVector, loti
 
 	dist = util.calculateDistance(final_dest, lotLocation)	# distance between lot and final location
 
-	return (lotid, location, availNumEstimate, priceEstimate, dist)
+	return (lotid, lotLocation, round(availNumEstimate), priceEstimate, dist)
 
 
 def predictionForUser(user_input):
@@ -83,6 +101,8 @@ def predictionForUser(user_input):
 
 	day, hour, minute = parseArrivalTime(arrival_time)
 
+	c1, c2 = (.5, .05)
+
 	lotResultVec = list()
 	for lot in LotsToTry:
 		lotLocation = tuple(float(v) for v in locDict[lot])
@@ -96,12 +116,48 @@ def predictionForUser(user_input):
 		fp.close()
 
 		filename = "/"+lot+"/"+lot+"_2013_09_"+day+".csv"
-		print filename
+		# print filename
 		lotResult = predictLot(filename, (hour, minute), AvailNum_weightsVector, Price_weightsVector, lot, lotLocation, final_dest)
 
 		lotResultVec.append(lotResult)
 
+		lambda_leave = max(0, c1*lotResult[2] - c2*lotResult[3])
+		# print lotResult[0], lotResult[2], lotResult[3], math.exp(-1*lambda_leave)
+
 	return lotResultVec
+
+def runMDP(lotResultVec, user_input, leave_params):
+	arrival_time, final_dest, max_dist, max_price, pref = user_input
+	mdp = ParkingMDP.SmartParkingMDP(pref, leave_params, lotResultVec)
+	vi = submission.ValueIteration()
+	vi.solve(mdp)
+	print 'best actions'
+
+	visitedVec = list()
+	# for state in vi.pi:
+		# print state
+		# Visited, currLotIndex, IsEnd = state
+		# print sum(Visited), type(sum(Visited))
+		# visitedVec.append(sum(Visited))
+
+		# if sum(Visited) == 1 and currLotIndex >= 0  and IsEnd == 0:
+			# print Visited, currLotIndex, IsEnd
+
+		# if currLotIndex >= 0  and IsEnd == 0:
+		# 	print lotResultVec[currLotIndex][0], lotResultVec[currLotIndex][2], sum(Visited), vi.pi[state]
+
+		# print state, vi.pi[state]
+	# print vi.pi.values()
+	# print sorted(visitedVec)
+
+# user_input = ('09-03, 13:40', DestLocation['AT&T Park'], .5, 10, .3)
+# lotResultVec = predictionForUser(user_input)
+leave_params = (.5, .05)
+
+
+# runMDP(lotResultVec, user_input, leave_params)
+
+
 
 
 

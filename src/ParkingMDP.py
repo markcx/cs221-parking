@@ -1,8 +1,8 @@
 from operator import itemgetter
-import util, blackJackUtil
+import util, blackJackUtil, math
 
 class SmartParkingMDP(blackJackUtil.MDP):
-	def __init__(self, P_dist, P_leave_params, Lots):
+	def __init__(self, P_dist, leave_params, Lots):
 		"""
 		The user will input 
 		(estimated time of arrival, final destination, 
@@ -13,7 +13,7 @@ class SmartParkingMDP(blackJackUtil.MDP):
 			1-P_dist = preference for next cheapest lot
 
 		leave_params: (c1, c2), such that 
-			lambda_leave = c1/AvailNum + c2/Price
+			lambda_leave = max(0, c1*AvailNum - c2*Price)
 		Lots: list of lots, 
 			each lot is (lot_id, loc, AvailNum, Price, Dist to final dest)
 			This list of lots is derived from the ML algorithm, which predicts (AvailNum, Price)
@@ -28,9 +28,9 @@ class SmartParkingMDP(blackJackUtil.MDP):
 
 		self.Rewards = {
 			'Leave': -1, 
-			'Leave, no more lots', -1000,
-			'Stay, but left', -10,
-			'Stay, and stayed', 100
+			'Leave, no more lots': -1000,
+			'Stay, but left': -10,
+			'Stay, and stayed': 100
 		}
 
 	def getNextClosestLot(self, state):
@@ -42,12 +42,18 @@ class SmartParkingMDP(blackJackUtil.MDP):
 			return []	# all the lots have been visited
 
 		min_dist = -1
+		min_index = -1
 
 		for i, lot in enumerate(self.Lots):
-			if not Visited:
+			if not Visited[i]:
+				
 				if lot[self.dist_index] < min_dist or min_dist == -1:
 					min_dist = lot[self.dist_index]
 					min_index = i
+
+		# print min_dist
+		# print state
+		assert min_index >= 0
 		return min_index
 
 	def getNextCheapestLot(self, state):
@@ -59,12 +65,14 @@ class SmartParkingMDP(blackJackUtil.MDP):
 			return []	# all the lots have been visited
 
 		min_price = -1
+		min_index = -1
 
 		for i, lot in enumerate(self.Lots):
-			if not Visited:
+			if not Visited[i]:
 				if lot[self.price_index] < min_price or min_price == -1:
 					min_price = lot[self.price_index]
 					min_index = i
+		assert min_index >= 0
 		return min_index
 
 		# lot = min(self.Unvisited, key=itemgetter(self.price_index))
@@ -111,16 +119,16 @@ class SmartParkingMDP(blackJackUtil.MDP):
 		if IsEnd:	# terminal state
 			return []
 		
-		closestLotIndex = getNextClosestLot(state)
-		cheapestLotIndex = getNextCheapestLot(state)
+		closestLotIndex = self.getNextClosestLot(state)
+		cheapestLotIndex = self.getNextCheapestLot(state)
 		if action == 'Leave':
 			if sum(Visited) == len(Visited):	# all the lots have been visited
-				newState = (None, -1, 1)
+				newState = (Visited, -1, 1)
 				reward = self.Rewards['Leave, no more lots']
 				return [(newState, 1, reward)]
 
-			Visited_closestLot = changeState(Visited, closestLotIndex)
-			Visited_cheapestLot = changeState(Visited, cheapestLotIndex)
+			Visited_closestLot = self.changeState(Visited, closestLotIndex)
+			Visited_cheapestLot = self.changeState(Visited, cheapestLotIndex)
 
 			succAndProbReward_closestLot = ((Visited_closestLot, closestLotIndex, 0),self.P_dist, self.Rewards['Leave'])
 			succAndProbReward_cheapestLot = ((Visited_cheapestLot, cheapestLotIndex,0), 1-self.P_dist, self.Rewards['Leave'])
@@ -128,7 +136,7 @@ class SmartParkingMDP(blackJackUtil.MDP):
 			return [succAndProbReward_closestLot, succAndProbReward_cheapestLot]
 
 		else:	# action == 'Stay'
-			if currLotIndex == -1:
+			if currLotIndex < 0:
 				return []	
 
 			succList = list()
@@ -136,20 +144,23 @@ class SmartParkingMDP(blackJackUtil.MDP):
 			# actually staying put
 			currLot = self.Lots[currLotIndex]
 			c1, c2 = self.leave_params
-			lambda_leave = c1/currLot[self.AvailNum_index]+c2/currLot[self.price_index]
+			AvailNum = currLot[self.AvailNum_index]
+			Price = currLot[self.price_index]
+			lambda_leave = util.computeLambdaLeave(AvailNum, Price)
+			# lambda_leave = c1/(currLot[self.AvailNum_index]+1)+c2/(currLot[self.price_index]+1)
 			P_leave = math.exp(-1*lambda_leave)
-			print P_leave
+			# print 'AvailNum=%d, Price=%f, P_leave=%f' % (AvailNum, Price, P_leave)
 
 			newState = (Visited, currLotIndex, 1)
 			succList.append((newState, 1-P_leave, self.Rewards['Stay, and stayed'] )) 
 
 			# leaving anyway
 			if sum(Visited) == len(Visited):	# all the lots have been visited
-				newState = (None, -1, 1)
+				newState = (Visited, -1, 1)
 				succList.append((newState, P_leave, self.Rewards['Leave, no more lots']))
 			else:
-				Visited_closestLot = changeState(Visited, closestLotIndex)
-				Visited_cheapestLot = changeState(Visited, cheapestLotIndex)
+				Visited_closestLot = self.changeState(Visited, closestLotIndex)
+				Visited_cheapestLot = self.changeState(Visited, cheapestLotIndex)
 
 				succAndProbReward_closestLot = ((Visited_closestLot, closestLotIndex, 0),P_leave*self.P_dist, self.Rewards['Stay, but left'])
 				succAndProbReward_cheapestLot = ((Visited_cheapestLot, cheapestLotIndex,0), P_leave*(1-self.P_dist), self.Rewards['Stay, but left'])

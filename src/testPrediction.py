@@ -25,9 +25,10 @@ def test(filename, locDict, eventDict, AvailNum_weightsVector, Price_weightsVect
     priceNumVec = list()
     priceEstimateVec = list()
 
-    def computeError(weights, y, count, sumErr, Yvec, estimateVec):
+    def computeError(weights, y, count, sumErr, Yvec, estimateVec,rounding=1):
         estimate = util.sparseVectorDotProduct(weights, phi)
-        estimate = round(estimate)
+        if rounding:
+            estimate = round(estimate)
 
         if abs(y-estimate) < 1e-3:
             sumErr += 0
@@ -42,16 +43,15 @@ def test(filename, locDict, eventDict, AvailNum_weightsVector, Price_weightsVect
         return (sumErr, count)
 
     for line in fp:
-        
-        _temp = util.exactSingleLineFromFine(line)
-        print "*****************", _temp
+        # _temp = util.exactSingleLineFromFine(line)
+        # print "*****************", _temp
         phi, availNum, price = model.extractRecordFeatures(line,locDict, eventDict)
 
         if len(phi)<=0 or availNum < 0 or price < 0:
             continue
 
-        sumErr[0], count[0] = computeError(AvailNum_weightsVector, availNum, count[0], sumErr[0], availNumVec, availNumEstimateVec)
-        sumErr[1], count[1] = computeError(Price_weightsVector, price, count[1], sumErr[1], priceNumVec, priceEstimateVec)
+        sumErr[0], count[0] = computeError(AvailNum_weightsVector, availNum, count[0], sumErr[0], availNumVec, availNumEstimateVec,1)
+        sumErr[1], count[1] = computeError(Price_weightsVector, price, count[1], sumErr[1], priceNumVec, priceEstimateVec,0)
         
         
     fp.close()

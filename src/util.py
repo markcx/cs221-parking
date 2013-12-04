@@ -1,6 +1,7 @@
 import math, os, datetime, time
 from glob import glob
 
+
 CENTROIDS = [[  37.80674047,   37.75915639,   37.77783732,   37.79128318,   37.78229867,
     37.79388065,   37.79965323,   37.78684646],
  [-122.41744638, -122.42047599, -122.42060377, -122.40172484, -122.39375636,
@@ -18,7 +19,6 @@ def calculateDistance(loc1, loc2, unit='mile'):
     radius_km = 6371  # km
     radius_mile= 3960 # mile
 
-
     difflat = math.radians(lat2-lat1)
     difflng = math.radians(lng2-lng1)
 
@@ -32,6 +32,10 @@ def calculateDistance(loc1, loc2, unit='mile'):
         raise "none valid unit "
 
     return d
+
+def computeLambdaLeave(leave_params, AvailNum, Price):
+    c1, c2 = leave_params
+    return max(0, c1*AvailNum - c2*Price)
 
 def sparseVectorDotProduct(v1, v2):
     """

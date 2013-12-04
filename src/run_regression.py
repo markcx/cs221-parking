@@ -5,8 +5,8 @@ import featureExtractorModel as model
 import cPickle as pickle
 import json
 
-lots = ['935', '202031', '326052']
-# lots = os.listdir('../data')      # get a list of all lots in train directory
+# lots = ['935', '202031', '326052']
+lots = os.listdir('../data')      # get a list of all lots in train directory
 
 readLocation = util.ReadLocation("../idLocation/helloLocation.txt")         
 locDict = readLocation.getLocationDict()
@@ -90,5 +90,6 @@ def linearRegression(lot):
 
 # run regression on all the lots
 for lot in lots:
+    print lot
     linearRegression(lot)
         
