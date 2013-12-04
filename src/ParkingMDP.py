@@ -1,6 +1,7 @@
 from operator import itemgetter
+import util, blackJackUtil
 
-class SmartParkingMDP(util.MDP):
+class SmartParkingMDP(blackJackUtil.MDP):
 	def __init__(self, P_dist, P_leave_params, Lots):
 		"""
 		The user will input 
