@@ -21,8 +21,9 @@ class SmartParkingMDP(util.MDP):
 		self.P_dist = P_dist
 		self.leave_params = leave_params
 		self.Lots = Lots 		# list of tuples
-		self.min_dist_index = 4
-		self.min_price_index = 3
+		self.dist_index = 4
+		self.price_index = 3
+		self.AvailNum_index = 2
 
 		self.Rewards = {
 			'Leave': -1, 
@@ -35,7 +36,7 @@ class SmartParkingMDP(util.MDP):
 		'''
 		Returns the index of next closest lot to the destination that has not been visited
 		'''
-		Visited, IsEnd = state
+		Visited, currLotIndex, IsEnd = state
 		if sum(Visited) == len(Visited):
 			return []	# all the lots have been visited
 
@@ -43,8 +44,8 @@ class SmartParkingMDP(util.MDP):
 
 		for i, lot in enumerate(self.Lots):
 			if not Visited:
-				if lot[self.min_dist_index] < min_dist or min_dist == -1:
-					min_dist = lot[self.min_dist_index]
+				if lot[self.dist_index] < min_dist or min_dist == -1:
+					min_dist = lot[self.dist_index]
 					min_index = i
 		return min_index
 
@@ -52,7 +53,7 @@ class SmartParkingMDP(util.MDP):
 		'''
 		Returns the next cheapest lot that has not been visited
 		'''
-		Visited, IsEnd = state
+		Visited, currLotIndex, IsEnd = state
 		if sum(Visited) == len(Visited):
 			return []	# all the lots have been visited
 
@@ -60,12 +61,12 @@ class SmartParkingMDP(util.MDP):
 
 		for i, lot in enumerate(self.Lots):
 			if not Visited:
-				if lot[self.min_price_index] < min_price or min_price == -1:
-					min_price = lot[self.min_price_index]
+				if lot[self.price_index] < min_price or min_price == -1:
+					min_price = lot[self.price_index]
 					min_index = i
 		return min_index
 
-		# lot = min(self.Unvisited, key=itemgetter(self.min_price_index))
+		# lot = min(self.Unvisited, key=itemgetter(self.price_index))
 		# return lot
 
 	def startState(self):
@@ -82,9 +83,8 @@ class SmartParkingMDP(util.MDP):
 		# else:	# min_price_lot
 		# 	index = getNextCheapestLot()
 
-
 		Visited = (0,)*len(self.Lots)
-		return (Visited, 0)
+		return (Visited, -1, 0)
 
 	def actions(self, state):
 		'''
@@ -99,14 +99,14 @@ class SmartParkingMDP(util.MDP):
 		'''
 		_l = list(Visited)
 		_l[Index] = 1
-		return (tuple(_l),0)
+		return tuple(_l)
 
 	def succAndProbReward(self, state, action):
 		'''
 		Return a list of (newState, prob, reward) tuples corresponding to edges
 		coming out of |state|.  Indicate a terminal state by setting state[1]=1
 		'''
-		Visited, IsEnd = state
+		Visited, currLotIndex, IsEnd = state
 		if IsEnd:	# terminal state
 			return []
 		
@@ -114,31 +114,49 @@ class SmartParkingMDP(util.MDP):
 		cheapestLotIndex = getNextCheapestLot(state)
 		if action == 'Leave':
 			if sum(Visited) == len(Visited):	# all the lots have been visited
-				newState = (None, 1)
+				newState = (None, -1, 1)
 				reward = self.Rewards['Leave, no more lots']
 				return [(newState, 1, reward)]
 
-			succAndProbReward_closestLot = (changeState(Visited, closestLotIndex),self.P_dist, self.Rewards['Leave'])
-			succAndProbReward_cheapestLot = (changeState(Visited, cheapest), 1-self.P_dist, self.Rewards['Leave'])
+			Visited_closestLot = changeState(Visited, closestLotIndex)
+			Visited_cheapestLot = changeState(Visited, cheapestLotIndex)
+
+			succAndProbReward_closestLot = ((Visited_closestLot, closestLotIndex, 0),self.P_dist, self.Rewards['Leave'])
+			succAndProbReward_cheapestLot = ((Visited_cheapestLot, cheapestLotIndex,0), 1-self.P_dist, self.Rewards['Leave'])
 
 			return [succAndProbReward_closestLot, succAndProbReward_cheapestLot]
 
 		else:	# action == 'Stay'
+			if currLotIndex == -1:
+				return []	
 
-			
+			succList = list()
 
+			# actually staying put
+			currLot = self.Lots[currLotIndex]
+			c1, c2 = self.leave_params
+			lambda_leave = c1/currLot[self.AvailNum_index]+c2/currLot[self.price_index]
+			P_leave = math.exp(-1*lambda_leave)
+			print P_leave
+
+			newState = (Visited, currLotIndex, 1)
+			succList.append((newState, 1-P_leave, self.Rewards['Stay, and stayed'] )) 
+
+			# leaving anyway
 			if sum(Visited) == len(Visited):	# all the lots have been visited
-				newState = (None, 1)
-				reward = self.Rewards['Leave, no more lots']
-				return [(newState, 1, reward)]
+				newState = (None, -1, 1)
+				succList.append((newState, P_leave, self.Rewards['Leave, no more lots']))
+			else:
+				Visited_closestLot = changeState(Visited, closestLotIndex)
+				Visited_cheapestLot = changeState(Visited, cheapestLotIndex)
 
-			succAndProbReward_closestLot = (changeState(Visited, closestLotIndex),self.P_dist, self.Rewards['Leave'])
-			succAndProbReward_cheapestLot = (changeState(Visited, cheapest), 1-self.P_dist, self.Rewards['Leave'])
+				succAndProbReward_closestLot = ((Visited_closestLot, closestLotIndex, 0),P_leave*self.P_dist, self.Rewards['Stay, but left'])
+				succAndProbReward_cheapestLot = ((Visited_cheapestLot, cheapestLotIndex,0), P_leave*(1-self.P_dist), self.Rewards['Stay, but left'])
 
-			return [succAndProbReward_closestLot, succAndProbReward_cheapestLot]
+				succList.append(succAndProbReward_cheapestLot)
+				succList.append(succAndProbReward_closestLot)
 
-
-
+			return succList
 
 	def discount(self):
 		return 1
