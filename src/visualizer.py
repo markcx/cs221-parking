@@ -1,5 +1,6 @@
 import numpy
 import matplotlib.pyplot as plt
+import cPickle as pickle
 
 leave_params = (.5, .05)
 
@@ -18,4 +19,26 @@ def visualize_P_leave(leave_params):
     plt.legend(PriceVecLegend, fontsize=18)
     plt.show()
 
-visualize_P_leave(leave_params)
+# visualize_P_leave(leave_params)
+
+def testPredictionResults():
+    with open('testPredictionResults.p', 'rb') as fp:
+        totalErrResults = pickle.load(fp)
+    fp.close()
+
+    Lots = list()
+    availNumErrVec = list()
+    priceErrVec = list()
+
+    for item in totalErrResults:
+        Lots.append(item[0])
+        availNumErrVec.append(item[1])
+        priceErrVec.append(item[2])
+
+    plt.plot(availNumErrVec)
+    plt.show()
+
+    plt.plot(priceErrVec)
+    plt.show()
+
+testPredictionResults()

@@ -146,7 +146,7 @@ class SmartParkingMDP(blackJackUtil.MDP):
 			c1, c2 = self.leave_params
 			AvailNum = currLot[self.AvailNum_index]
 			Price = currLot[self.price_index]
-			lambda_leave = util.computeLambdaLeave(AvailNum, Price)
+			lambda_leave = util.computeLambdaLeave(self.leave_params, AvailNum, Price)
 			# lambda_leave = c1/(currLot[self.AvailNum_index]+1)+c2/(currLot[self.price_index]+1)
 			P_leave = math.exp(-1*lambda_leave)
 			# print 'AvailNum=%d, Price=%f, P_leave=%f' % (AvailNum, Price, P_leave)

@@ -1,12 +1,12 @@
 from collections import Counter
-import util
+import util, os
 import featureExtractorModel as model 
 import cPickle as pickle
 import matplotlib.pyplot as plt
 from numpy import linspace
 
-lots = ['935', '202031', '326052']
-# lots = os.listdir('../data')      # get a list of all lots in output directory
+# lots = ['935', '202031', '326052']
+lots = os.listdir('../data')      # get a list of all lots in output directory
 
 readEvents = util.ReadEvents("../eventsSchedule/event_schedule2.csv")
 eventDict = readEvents.getEventDict()
@@ -55,8 +55,12 @@ def test(filename, locDict, eventDict, AvailNum_weightsVector, Price_weightsVect
         
         
     fp.close()
+
+    if count[0] == 0 or count[1] == 0:
+        return (-1,-1
+            )
     avgErr = (sumErr[0]/count[0], sumErr[1]/count[1])   # mean absolute error
-    print "Average Error: (availNum, price) = ", avgErr
+    # print "Average Error: (availNum, price) = ", avgErr
 
     if plotting:
         timeVec = linspace(6,22,len(availNumVec))
@@ -77,6 +81,15 @@ def test(filename, locDict, eventDict, AvailNum_weightsVector, Price_weightsVect
         plt.title(filename,fontsize=14)
         plt.show()
 
+    return avgErr
+
+# days = ['03', '04', '05']   # which days to test
+days = ['03']
+
+availNumErrVec = list()
+priceErrVec = list()
+totalErrResults = list()
+
 for lot in lots:
     # load the weights
     with open('../weights/'+lot+'AvailNumWeights.p', 'rb') as fp:
@@ -87,16 +100,41 @@ for lot in lots:
         Price_weightsVector = pickle.load(fp)
     fp.close()
     
-    print '\n**********************'
-    print "testing on lot", lot
+    # print '\n**********************'
+    # print "testing on lot", lot
 
-    # days = ['03', '04', '05']   # which days to test
-    days = ['03']
+    avgAvailNumErr = 0.
+    avgPriceErr = 0.
+    index = 0
     for day in days:
         filename = "/"+lot+"/"+lot+"_2013_09_"+day+".csv"
-        print filename
-        test(filename, locDict, eventDict, AvailNum_weightsVector, Price_weightsVector,1)
-        # test2(filename, locDict, eventDict, AvailNum_weightsVector)
+        # print filename
+        AvailNumErr, PriceErr = test(filename, locDict, eventDict, AvailNum_weightsVector, Price_weightsVector)
+        if AvailNumErr == -1 or PriceErr == -1:
+            continue
+        index += 1
+        avgAvailNumErr += AvailNumErr
+        avgPriceErr += PriceErr
+
+    if index == 0 or AvailNumErr > 1:
+        continue
+    avgAvailNumErr /= index
+    avgPriceErr /= index
+    print "testing on lot", lot, avgAvailNumErr, avgPriceErr
+
+    availNumErrVec.append(avgAvailNumErr)
+    priceErrVec.append(avgPriceErr)
+    totalErrResults.append((lot, avgAvailNumErr, avgPriceErr))
+
+TotalAvgAvailNumErr = sum(availNumErrVec)/len(availNumErrVec)
+TotalPriceErr = sum(priceErrVec)/len(priceErrVec)
+
+print "Total Average Error: (availNum, price) = ", TotalAvgAvailNumErr, TotalPriceErr
+
+# write prediction to file
+with open('testPredictionResults.p', 'wb') as fp:
+    pickle.dump(totalErrResults, fp)
+fp.close()
 
 def test2(filename, locDict, eventDict, weightsVector, plotting=0):
     '''
