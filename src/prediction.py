@@ -7,13 +7,6 @@ from operator import itemgetter
 import matplotlib.pyplot as plt
 import numpy
 
-'''
-say user wants to go to:
-	AT&T Park
-	Pier 39
-	Market St
-'''
-
 DestLocation = {
 	'AT&T Park': (37.778635,-122.39051),
 	'Pier 39': (37.805105,-122.416376),
@@ -132,17 +125,21 @@ def predictionForUser(user_input):
 
 	return lotResultVec
 
-def recommendLots(lotResultVec, user_input):
+def recommendLots(lotResultVec, user_input, N=10):
 	arrival_time, final_dest, max_dist, max_price, pref = user_input
 	if pref > .5:	# user prefer closest distance
+		prefName = "dist"
 		sortedLots = sorted(lotResultVec,key=itemgetter(4))
 	else:	# user prefer price
+		prefName = "price"
 		sortedLots = sorted(lotResultVec,key=itemgetter(3))
 
 	for i, lot in enumerate(sortedLots):
-		print lot
-		if i >= 10:
+		# lot = (lotid, lotLocation, round(availNumEstimate), priceEstimate, dist)
+		if i == N:
 			break
+		print "lot id %s, Est AvailNum=%d, Est Price = $%.2f, Dist to dest = %.2f miles" % (lot[0], lot[2], lot[3], lot[4])
+		
 
 	return sortedLots
 
@@ -230,28 +227,28 @@ def runMDP(lotResultVec, user_input, leave_params):
 	return numSteps
 	
 
-LocationOfInterest = 'AT&T Park'
-pref = .8
-max_dist = .2
-max_price = 10
-leave_params = (.5, .05)
-
-def runRecommender():
-	prefVec = numpy.linspace(0,1,11)
+def runRecommender(time, LocationOfInterest,max_dist, max_price, numDisplay):
+	# time = '09-03, 13:40'
+	# LocationOfInterest = 'AT&T Park'
+	# prefVec = numpy.linspace(0,1,11)
+	prefVec = [.3, .8]
 	for pref in prefVec:
-		user_input = ('09-03, 13:40', DestLocation['AT&T Park'], max_dist, max_price, pref)
+		if pref > .5:
+			prefName = "dist"
+		else:
+			prefName = "price"
+		user_input = (time, DestLocation[LocationOfInterest], max_dist, max_price, pref)
 
 		lotResultVec = predictionForUser(user_input)
 		print ''
-		print 'user_input: time=%s, destination=%s, max_dist=%fmiles, max_price=$%d, pref=%f' % (user_input[0],LocationOfInterest,max_dist, max_price, pref)
-		recommendLots(lotResultVec, user_input)
+		print 'user_input: time=%s, destination=%s, max_dist=%.1f miles, max_price=$%d, pref=%s' % (user_input[0],LocationOfInterest,max_dist, max_price, prefName)
+		recommendLots(lotResultVec, user_input, numDisplay)
 
-# user_input = ('09-03, 13:40', DestLocation['AT&T Park'], max_dist, max_price, pref)
-# lotResultVec = predictionForUser(user_input)
-# runMDP(lotResultVec, user_input, leave_params)
 
-def runMDPParamChecker(currTimeVec):
+
+def runMDPParamChecker(currTimeVec,LocationOfInterest,max_dist, max_price):
 	prefVec = numpy.linspace(0,1,11)
+	leave_params = (.5, .05)
 	colors = ['cs-','bo-','g+-','k--']
 
 	avgExpectedNumSteps = numpy.zeros(len(prefVec))
@@ -261,9 +258,10 @@ def runMDPParamChecker(currTimeVec):
 
 		numStepsVec = numpy.zeros(len(prefVec))
 		for j, pref in enumerate(prefVec):
-			user_input = (currTime, DestLocation['AT&T Park'], max_dist, max_price, pref)
+			user_input = (currTime, DestLocation[LocationOfInterest], max_dist, max_price, pref)
 
 			lotResultVec = predictionForUser(user_input)
+			print 'Number of lots that matched is', len(lotResultVec)
 			# print ''
 			# print 'user_input: time=%s, destination=%s, max_dist=%fmiles, max_price=$%d, pref=%f' % (user_input[0],LocationOfInterest,max_dist, max_price, pref)
 			numSteps = runMDP(lotResultVec, user_input, leave_params)
@@ -280,14 +278,47 @@ def runMDPParamChecker(currTimeVec):
 	legendOfPlot = currTimeVec[:]
 	legendOfPlot.append('Average')
 	print currTimeVec
-	plt.xlabel('User preference for min distance',fontsize=24)
-	plt.ylabel('Expected Num of Lots to Try before Stay',fontsize=24)
-	plt.legend(legendOfPlot, fontsize=18)
+	plt.xlabel('User preference for min distance',fontsize=12)
+	plt.ylabel('Expected Num of Lots to Try before Stay',fontsize=12)
+	plt.legend(legendOfPlot, fontsize=12)
 	plt.ylim(0,8)
 	# plt.title(currTime,fontsize=24)
+	plt.savefig('../figures/'+LocationOfInterest+'max_dist'+str(int(max_dist*100))+'max_price'+str(max_price)+'.png')
 	plt.show()
+	plt.close()
 
-runMDPParamChecker(['09-03, 10:30', '09-03, 12:30', '09-03, 14:30', '09-03, 16:30'])
+'''
+say user wants to go to:
+	AT&T Park
+	Pier 39
+	Civic Center
+'''
 
+currTimeVec = ['09-03, 10:30', '09-03, 12:30', '09-03, 14:30', '09-03, 16:30']
+max_dist_vec = [.1, .2, .5]
+max_price_vec = [1, 5, 10]
+LocationOfInterest = 'AT&T Park'
+pref = .8
+
+# Running recommender just once
+max_dist = .5
+max_price = 5
+for LocationOfInterest in DestLocation:
+	runRecommender('09-03, 12:30', LocationOfInterest,max_dist, max_price, 3)
+
+# user_input = ('09-03, 12:30', DestLocation[LocationOfInterest], max_dist, max_price, pref)
+# print 'user_input: time=%s, destination=%s, max_dist=%.1fmiles, max_price=$%d, pref=%.2f' % (user_input[0],LocationOfInterest,max_dist, max_price, pref)
+# lotResultVec = predictionForUser(user_input)
+# sortedlots = recommendLots(lotResultVec, user_input, 3)	# also prints
+
+
+
+# runMDPParamChecker(currTimeVec, 'AT&T Park', .5 , 1)
+
+
+# for LocationOfInterest in DestLocation:
+# 	for max_dist in max_dist_vec:
+# 		for max_price in max_price_vec:
+# 			runMDPParamChecker(currTimeVec, LocationOfInterest, max_dist, max_price)
 
 
